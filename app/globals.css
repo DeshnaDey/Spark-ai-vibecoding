@@ -1,26 +1,455 @@
 @import "tailwindcss";
 
+/* ============================================================
+   SPARK.AI — BALATRO DESIGN SYSTEM
+   Neon arcade meets serious productivity
+   ============================================================ */
+
+/* --- CSS Variables / Balatro Palette --- */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Core backgrounds */
+  --bg-void:        #0d0d0f;
+  --bg-deep:        #111116;
+  --bg-panel:       #16161e;
+  --bg-card:        #1a1a24;
+  --bg-card-hover:  #1f1f2e;
+  --bg-input:       #12121a;
+
+  /* Neon accent colors */
+  --neon-amber:     #f5a623;
+  --neon-amber-dim: #c47d0e;
+  --neon-purple:    #9b5de5;
+  --neon-purple-dim:#6b3aaa;
+  --neon-green:     #39ff14;
+  --neon-green-dim: #22cc00;
+  --neon-pink:      #ff2d78;
+  --neon-pink-dim:  #cc1f5a;
+  --neon-blue:      #4fc3f7;
+  --neon-blue-dim:  #2196f3;
+  --neon-cyan:      #00e5ff;
+
+  /* AI brand colors */
+  --ai-gpt:         #39ff14;
+  --ai-claude:      #f5a623;
+  --ai-gemini:      #4fc3f7;
+
+  /* Text */
+  --text-primary:   #e8e8f0;
+  --text-secondary: #8888aa;
+  --text-dim:       #555570;
+
+  /* Borders */
+  --border-subtle:  rgba(255,255,255,0.06);
+  --border-card:    rgba(155,93,229,0.3);
+  --border-glow:    rgba(245,166,35,0.5);
+
+  /* Fonts */
+  --font-display:   'Space Grotesk', sans-serif;
+  --font-mono:      'IBM Plex Mono', monospace;
+
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-med:  250ms ease;
+  --transition-slow: 400ms ease;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* ============================================================
+   RESET & BASE
+   ============================================================ */
+
+*, *::before, *::after {
+  box-sizing: border-box;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--bg-void);
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  min-height: 100vh;
+  overflow-x: hidden;
+  position: relative;
 }
+
+/* ============================================================
+   CRT SCANLINE OVERLAY
+   Full-screen subtle horizontal lines for that retro feel
+   ============================================================ */
+
+body::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 9999;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.15) 2px,
+    rgba(0, 0, 0, 0.15) 4px
+  );
+  mix-blend-mode: multiply;
+}
+
+/* ============================================================
+   VIGNETTE OVERLAY — subtle darkening at edges
+   ============================================================ */
+
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 9998;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 60%,
+    rgba(0, 0, 0, 0.5) 100%
+  );
+}
+
+/* ============================================================
+   FELT TEXTURE BACKGROUND
+   Radial gradients to simulate dark green felt / deep space
+   ============================================================ */
+
+.felt-bg {
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(155, 93, 229, 0.08) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 20%, rgba(245, 166, 35, 0.05) 0%, transparent 50%),
+    radial-gradient(ellipse at 60% 80%, rgba(57, 255, 20, 0.04) 0%, transparent 50%),
+    var(--bg-void);
+}
+
+/* ============================================================
+   GLOW CARD — The core component class
+   Chunky panel with neon border + box-shadow pulse
+   ============================================================ */
+
+.glow-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: 16px;
+  box-shadow:
+    0 0 0 1px rgba(155, 93, 229, 0.1),
+    0 0 20px rgba(155, 93, 229, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  transition: all var(--transition-med);
+}
+
+.glow-card:hover {
+  border-color: rgba(155, 93, 229, 0.6);
+  box-shadow:
+    0 0 0 1px rgba(155, 93, 229, 0.3),
+    0 0 30px rgba(155, 93, 229, 0.2),
+    0 0 60px rgba(155, 93, 229, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.glow-card-amber {
+  border-color: rgba(245, 166, 35, 0.3);
+  box-shadow:
+    0 0 0 1px rgba(245, 166, 35, 0.1),
+    0 0 20px rgba(245, 166, 35, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.glow-card-amber:hover {
+  border-color: rgba(245, 166, 35, 0.7);
+  box-shadow:
+    0 0 0 1px rgba(245, 166, 35, 0.4),
+    0 0 30px rgba(245, 166, 35, 0.25),
+    0 0 60px rgba(245, 166, 35, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+/* ============================================================
+   NEON TEXT GLOWS
+   ============================================================ */
+
+.neon-amber {
+  color: var(--neon-amber);
+  text-shadow:
+    0 0 10px rgba(245, 166, 35, 0.8),
+    0 0 20px rgba(245, 166, 35, 0.5),
+    0 0 40px rgba(245, 166, 35, 0.3);
+}
+
+.neon-purple {
+  color: var(--neon-purple);
+  text-shadow:
+    0 0 10px rgba(155, 93, 229, 0.8),
+    0 0 20px rgba(155, 93, 229, 0.5),
+    0 0 40px rgba(155, 93, 229, 0.3);
+}
+
+.neon-green {
+  color: var(--neon-green);
+  text-shadow:
+    0 0 10px rgba(57, 255, 20, 0.8),
+    0 0 20px rgba(57, 255, 20, 0.5),
+    0 0 40px rgba(57, 255, 20, 0.3);
+}
+
+.neon-pink {
+  color: var(--neon-pink);
+  text-shadow:
+    0 0 10px rgba(255, 45, 120, 0.8),
+    0 0 20px rgba(255, 45, 120, 0.5);
+}
+
+/* ============================================================
+   NEON BUTTON
+   ============================================================ */
+
+.neon-btn {
+  position: relative;
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  border-radius: 10px;
+  cursor: pointer;
+  overflow: hidden;
+  transition: all var(--transition-med);
+}
+
+.neon-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(255,255,255,0.1) 0%,
+    transparent 60%
+  );
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+
+.neon-btn:hover::before {
+  opacity: 1;
+}
+
+.neon-btn-amber {
+  background: linear-gradient(135deg, #c47d0e, #f5a623);
+  border: 1px solid rgba(245, 166, 35, 0.5);
+  color: #0d0d0f;
+  box-shadow:
+    0 0 20px rgba(245, 166, 35, 0.3),
+    0 4px 15px rgba(0,0,0,0.4);
+}
+
+.neon-btn-amber:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow:
+    0 0 30px rgba(245, 166, 35, 0.6),
+    0 0 60px rgba(245, 166, 35, 0.2),
+    0 8px 25px rgba(0,0,0,0.5);
+}
+
+.neon-btn-amber:active {
+  transform: translateY(0) scale(0.99);
+}
+
+/* ============================================================
+   ANIMATIONS
+   ============================================================ */
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow:
+      0 0 20px rgba(155, 93, 229, 0.3),
+      0 0 40px rgba(155, 93, 229, 0.1);
+  }
+  50% {
+    box-shadow:
+      0 0 30px rgba(155, 93, 229, 0.6),
+      0 0 60px rgba(155, 93, 229, 0.2),
+      0 0 90px rgba(155, 93, 229, 0.1);
+  }
+}
+
+@keyframes pulse-glow-amber {
+  0%, 100% {
+    box-shadow:
+      0 0 15px rgba(245, 166, 35, 0.4),
+      0 0 30px rgba(245, 166, 35, 0.15);
+  }
+  50% {
+    box-shadow:
+      0 0 25px rgba(245, 166, 35, 0.7),
+      0 0 50px rgba(245, 166, 35, 0.3),
+      0 0 80px rgba(245, 166, 35, 0.1);
+  }
+}
+
+@keyframes flicker {
+  0%, 19.999%, 22%, 62.999%, 64%, 64.999%, 70%, 100% { opacity: 1; }
+  20%, 21.999%, 63%, 63.999%, 65%, 69.999% { opacity: 0.6; }
+}
+
+@keyframes building-rise {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes neon-dots {
+  0%, 80%, 100% { opacity: 0; transform: scale(0.8); }
+  40% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes slide-in-left {
+  from { transform: translateX(-20px); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+
+@keyframes slide-in-up {
+  from { transform: translateY(20px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.animate-pulse-glow        { animation: pulse-glow        2s ease-in-out infinite; }
+.animate-pulse-glow-amber  { animation: pulse-glow-amber  2s ease-in-out infinite; }
+.animate-flicker           { animation: flicker           3s linear infinite; }
+.animate-building-rise     { animation: building-rise     0.4s ease forwards; }
+.animate-slide-in-left     { animation: slide-in-left     0.3s ease forwards; }
+.animate-slide-in-up       { animation: slide-in-up       0.3s ease forwards; }
+
+/* ============================================================
+   FLOOR NAV BUTTONS (Elevator style)
+   ============================================================ */
+
+.floor-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 2px solid var(--border-card);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all var(--transition-med);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.floor-btn:hover {
+  border-color: var(--neon-purple);
+  color: var(--neon-purple);
+  box-shadow: 0 0 15px rgba(155, 93, 229, 0.4);
+}
+
+.floor-btn.active {
+  border-color: var(--neon-amber);
+  color: var(--neon-amber);
+  background: rgba(245, 166, 35, 0.1);
+  box-shadow:
+    0 0 20px rgba(245, 166, 35, 0.5),
+    inset 0 0 10px rgba(245, 166, 35, 0.1);
+}
+
+/* ============================================================
+   CHAT STYLES
+   ============================================================ */
+
+.chat-message {
+  border-radius: 12px;
+  padding: 14px 18px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.7;
+  animation: slide-in-up 0.2s ease forwards;
+}
+
+.chat-message-user {
+  background: rgba(155, 93, 229, 0.12);
+  border: 1px solid rgba(155, 93, 229, 0.25);
+  color: var(--text-primary);
+}
+
+.chat-message-assistant {
+  background: rgba(245, 166, 35, 0.06);
+  border: 1px solid rgba(245, 166, 35, 0.15);
+  color: var(--text-primary);
+}
+
+.chat-message-error {
+  background: rgba(255, 45, 120, 0.08);
+  border: 1px solid rgba(255, 45, 120, 0.25);
+  color: var(--neon-pink);
+}
+
+/* Typing dots */
+.typing-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--neon-amber);
+  animation: neon-dots 1.4s ease-in-out infinite;
+}
+
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+/* ============================================================
+   SCROLLBAR STYLING
+   ============================================================ */
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-deep);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(155, 93, 229, 0.4);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(155, 93, 229, 0.7);
+}
+
+/* ============================================================
+   UTILITY CLASSES
+   ============================================================ */
+
+.font-display { font-family: var(--font-display); }
+.font-mono    { font-family: var(--font-mono); }
+
+.text-amber   { color: var(--neon-amber); }
+.text-purple  { color: var(--neon-purple); }
+.text-green   { color: var(--neon-green); }
+.text-pink    { color: var(--neon-pink); }
+.text-blue    { color: var(--neon-blue); }
+.text-dim     { color: var(--text-dim); }
+.text-secondary { color: var(--text-secondary); }
+
+.border-subtle { border-color: var(--border-subtle); }
