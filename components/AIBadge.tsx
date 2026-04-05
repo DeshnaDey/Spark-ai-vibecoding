@@ -1,21 +1,16 @@
 "use client";
 
-import { AIModel, getAIColor } from "@/lib/storage";
+import { getModelConfig } from "@/lib/storage";
 
 interface AIBadgeProps {
-  ai: AIModel;
+  modelId: string;
   size?: "sm" | "md" | "lg";
   showLabel?: boolean;
 }
 
-const AI_ICONS: Record<AIModel, string> = {
-  GPT: "⚡",
-  Claude: "◈",
-  Gemini: "✦",
-};
-
-export default function AIBadge({ ai, size = "md", showLabel = true }: AIBadgeProps) {
-  const color = getAIColor(ai);
+export default function AIBadge({ modelId, size = "md", showLabel = true }: AIBadgeProps) {
+  const config = getModelConfig(modelId);
+  const { color, icon, label } = config;
 
   const sizeClasses = {
     sm: "text-xs px-2 py-0.5 gap-1",
@@ -33,8 +28,8 @@ export default function AIBadge({ ai, size = "md", showLabel = true }: AIBadgePr
         boxShadow: `0 0 8px ${color}30, inset 0 0 4px ${color}10`,
       }}
     >
-      <span>{AI_ICONS[ai]}</span>
-      {showLabel && <span>{ai}</span>}
+      <span>{icon}</span>
+      {showLabel && <span className="truncate max-w-[80px]">{label}</span>}
     </span>
   );
 }

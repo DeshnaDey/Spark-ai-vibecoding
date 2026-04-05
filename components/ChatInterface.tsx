@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { ChatMessage, AIModel, getAIColor } from "@/lib/storage";
+import { ChatMessage, getAIColor, getModelConfig } from "@/lib/storage";
+// Note: AIModel is now just a string (model ID)
 import AIBadge from "./AIBadge";
 
 interface ChatInterfaceProps {
   projectId: string;
   systemPrompt: string;
-  ai: AIModel;
+  modelId: string;
   initialHistory: ChatMessage[];
   onHistoryUpdate: (messages: ChatMessage[]) => void;
 }
@@ -15,7 +16,7 @@ interface ChatInterfaceProps {
 export default function ChatInterface({
   projectId,
   systemPrompt,
-  ai,
+  modelId,
   initialHistory,
   onHistoryUpdate,
 }: ChatInterfaceProps) {
@@ -24,7 +25,8 @@ export default function ChatInterface({
   const [isLoading, setIsLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const color = getAIColor(ai);
+  const color = getAIColor(modelId);
+  const modelConfig = getModelConfig(modelId);
 
   // Sync with parent-provided history on mount
   useEffect(() => {
@@ -74,7 +76,7 @@ export default function ChatInterface({
         body: JSON.stringify({
           messages: apiMessages,
           systemPrompt: `You are an AI assistant helping with the following project:\n\n${systemPrompt}\n\nBe concise, helpful, and focused on this project context.`,
-          ai,
+          model: modelId,
         }),
       });
 
@@ -128,11 +130,11 @@ export default function ChatInterface({
                 color,
               }}
             >
-              ◈
+              {modelConfig.icon}
             </div>
             <div className="font-mono text-sm text-center">
               <div style={{ color }} className="font-semibold mb-1">
-                {ai} is ready.
+                {modelConfig.label} is ready.
               </div>
               <div className="text-[var(--text-dim)]">Send a message to start.</div>
             </div>
@@ -140,10 +142,10 @@ export default function ChatInterface({
         )}
 
         {messages.map((msg, i) => (
-          <MessageBubble key={i} message={msg} ai={ai} />
+          <MessageBubble key={i} message={msg} modelId={modelId} />
         ))}
 
-        {isLoading && <TypingIndicator ai={ai} color={color} />}
+        {isLoading && <TypingIndicator modelId={modelId} color={color} />}
         <div ref={bottomRef} />
       </div>
 
@@ -165,7 +167,7 @@ export default function ChatInterface({
             value={input}
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
-            placeholder={`Message ${ai}... (Enter to send, Shift+Enter for newline)`}
+            placeholder={`Message ${modelConfig.label}... (Enter to send, Shift+Enter for newline)`}
             className="flex-1 bg-transparent outline-none resize-none font-mono text-sm placeholder:text-[var(--text-dim)] text-[var(--text-primary)] leading-relaxed"
             rows={1}
             style={{ maxHeight: "160px" }}
@@ -185,7 +187,7 @@ export default function ChatInterface({
           </button>
         </div>
         <div className="flex items-center justify-between mt-2 px-1">
-          <AIBadge ai={ai} size="sm" />
+          <AIBadge modelId={modelId} size="sm" />
           <span className="font-mono text-[10px] text-[var(--text-dim)]">
             ↵ Send · ⇧↵ Newline
           </span>
@@ -210,27 +212,51 @@ const ERROR_MESSAGES: Record<string, { title: string; detail: string; link?: { l
     title: "Rate limited",
     detail: "Too many requests. Wait a moment and try again.",
   },
-  COMING_SOON: {
-    title: "Coming soon",
-    detail: "Gemini support is not yet available. Switch to Claude or GPT.",
+  OLLAMA_OFFLINE: {
+    title: "Ollama is offline",
+    detail: "Make sure Ollama is running locally. Start it with: ollama serve",
+    link: { label: "Download Ollama →", href: "https://ollama.com/download" },
   },
-  OPENAI_API_KEY_not_set: {
-    title: "OpenAI key missing",
-    detail: "Add OPENAI_API_KEY to your .env.local file to use GPT.",
+  UNKNOWN_MODEL: {
+    title: "Unknown model",
+    detail: "This AI option isn't supported yet.",
   },
 };
 
-function ErrorContent({ code, ai }: { code: string; ai: AIModel }) {
-  // Check if it matches a known code, otherwise show a generic message
-  const known = ERROR_MESSAGES[code];
-  const isKeyMissing = code.includes("OPENAI_API_KEY not set");
-  const openAIKeyMsg = ERROR_MESSAGES["OPENAI_API_KEY_not_set"];
+// Prefix used for model-not-found errors: "OLLAMA_MODEL_NOT_FOUND:llama3.2"
+const MODEL_NOT_FOUND_PREFIX = "OLLAMA_MODEL_NOT_FOUND:";
 
-  const info = known
-    ? known
-    : isKeyMissing
-    ? openAIKeyMsg
-    : { title: "Something went wrong", detail: code };
+function ErrorContent({ code }: { code: string }) {
+  // Check if it matches a known code, otherwise show a generic message
+  // Model not found (Ollama)
+  if (code.startsWith(MODEL_NOT_FOUND_PREFIX)) {
+    const modelId = code.slice(MODEL_NOT_FOUND_PREFIX.length);
+    return (
+      <div className="text-sm space-y-1">
+        <div className="font-semibold">⚠ Model not installed</div>
+        <div className="opacity-80 text-xs leading-relaxed">
+          <span className="font-mono" style={{ color: "#ff2d78" }}>{modelId}</span> isn&apos;t pulled in Ollama yet.
+        </div>
+        <div className="mt-2 rounded-lg px-3 py-2 font-mono text-xs border border-[rgba(255,45,120,0.2)] bg-[rgba(255,45,120,0.05)]">
+          ollama pull {modelId}
+        </div>
+        <div className="opacity-60 text-[10px] mt-1">Run that in a terminal, then try again.</div>
+      </div>
+    );
+  }
+
+  const known = ERROR_MESSAGES[code];
+
+  // Detect missing API key messages from the server
+  const keyMatch = code.match(/(ANTHROPIC|OPENAI|GEMINI)_API_KEY not set/);
+  const keyMissingInfo = keyMatch
+    ? {
+        title: `${keyMatch[1]} key missing`,
+        detail: `Add ${keyMatch[1]}_API_KEY to your .env.local file.`,
+      }
+    : null;
+
+  const info = known ?? keyMissingInfo ?? { title: "Something went wrong", detail: code };
 
   return (
     <div className="text-sm space-y-1">
@@ -250,10 +276,11 @@ function ErrorContent({ code, ai }: { code: string; ai: AIModel }) {
   );
 }
 
-function MessageBubble({ message, ai }: { message: ChatMessage; ai: AIModel }) {
-  const isUser = message.role === "user";
+function MessageBubble({ message, modelId }: { message: ChatMessage; modelId: string }) {
+  const isUser  = message.role === "user";
   const isError = message.role === "error";
-  const color = getAIColor(ai);
+  const color   = getAIColor(modelId);
+  const config  = getModelConfig(modelId);
 
   return (
     <div className={`flex gap-3 ${isUser ? "flex-row-reverse" : "flex-row"}`}>
@@ -268,21 +295,17 @@ function MessageBubble({ message, ai }: { message: ChatMessage; ai: AIModel }) {
             : { borderColor: `${color}50`, background: `${color}10`, color }
         }
       >
-        {isError ? "!" : isUser ? "U" : ai[0]}
+        {isError ? "!" : isUser ? "U" : config.icon}
       </div>
 
       {/* Bubble */}
       <div
         className={`chat-message max-w-[80%] ${
-          isError
-            ? "chat-message-error"
-            : isUser
-            ? "chat-message-user"
-            : "chat-message-assistant"
+          isError ? "chat-message-error" : isUser ? "chat-message-user" : "chat-message-assistant"
         }`}
       >
         {isError ? (
-          <ErrorContent code={message.content} ai={ai} />
+          <ErrorContent code={message.content} />
         ) : (
           <div className="whitespace-pre-wrap text-sm leading-relaxed">{message.content}</div>
         )}
@@ -294,14 +317,15 @@ function MessageBubble({ message, ai }: { message: ChatMessage; ai: AIModel }) {
   );
 }
 
-function TypingIndicator({ ai, color }: { ai: AIModel; color: string }) {
+function TypingIndicator({ modelId, color }: { modelId: string; color: string }) {
+  const config = getModelConfig(modelId);
   return (
     <div className="flex gap-3 flex-row">
       <div
         className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-mono font-bold border mt-0.5"
         style={{ borderColor: `${color}50`, background: `${color}10`, color }}
       >
-        {ai[0]}
+        {config.icon}
       </div>
       <div
         className="chat-message flex items-center gap-2 h-10"
